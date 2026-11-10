@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -84,6 +85,10 @@ func initializeDatabase(
 		if err = dbClient.Ent().Schema.Create(ctx, migrate.WithDropIndex(true)); err != nil {
 			return nil, nil, util.StatusWrap(err, "Could not automatically migrate to desired schema")
 		}
+	case *bb_portal.Database_SchemaManagement_Verify:
+		if err = verifySchema(ctx, dbClient); err != nil {
+			return nil, nil, util.StatusWrap(err, "Failed to verify the installed schema")
+		}
 	case *bb_portal.Database_SchemaManagement_Skip:
 		log.Print("Schema management is set to skip, assuming the desired schema is already installed")
 	default:
@@ -108,6 +113,22 @@ func initializeDatabase(
 		}
 	}
 	return dbClient, dbCleanupService, nil
+}
+
+// verifySchema checks that the installed schema has everything the
+// desired schema has, for when the schema is managed externally.
+func verifySchema(ctx context.Context, dbClient database.Client) error {
+	// This plans the changes Schema.Create would make, without executing
+	// them. The drop options are deliberately omitted, so that objects
+	// the installed schema has in addition are not reported.
+	var missingChanges bytes.Buffer
+	if err := dbClient.Ent().Schema.WriteTo(ctx, &missingChanges); err != nil {
+		return util.StatusWrap(err, "Failed to compare the installed schema with the desired schema")
+	}
+	if missingChanges.Len() > 0 {
+		return status.Errorf(codes.FailedPrecondition, "The installed schema differs from the desired schema. Missing changes:\n%s", missingChanges.String())
+	}
+	return nil
 }
 
 func main() {

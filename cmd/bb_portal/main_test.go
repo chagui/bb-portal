@@ -18,6 +18,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -171,4 +173,150 @@ func TestInitializeDatabaseSkipSkipsPreMigrations(t *testing.T) {
 		)`,
 	).Scan(&legacyColumnExists))
 	require.True(t, legacyColumnExists, "pre-migrations should not have run")
+}
+
+func installSchema(t *testing.T, connection *sql.DB) {
+	client, err := database.New("postgres", connection)
+	require.NoError(t, err)
+	require.NoError(t, client.Ent().Schema.Create(context.Background(), migrate.WithDropIndex(true)))
+}
+
+func execSQL(t *testing.T, connection *sql.DB, statements ...string) {
+	for _, statement := range statements {
+		_, err := connection.Exec(statement)
+		require.NoError(t, err, statement)
+	}
+}
+
+func TestInitializeDatabaseVerify(t *testing.T) {
+	// Each layout is relative to the schema bb_portal expects.
+	current := func(t *testing.T, connection *sql.DB) { installSchema(t, connection) }
+	behind := func(t *testing.T, connection *sql.DB) {
+		installSchema(t, connection)
+		execSQL(t, connection, `ALTER TABLE "authenticated_users" DROP COLUMN "display_name"`)
+	}
+	ahead := func(t *testing.T, connection *sql.DB) {
+		installSchema(t, connection)
+		execSQL(
+			t, connection,
+			`ALTER TABLE "authenticated_users" ADD COLUMN "added_by_newer_release" text NULL`,
+			`CREATE INDEX "added_by_newer_release_idx" ON "authenticated_users" ("display_name")`,
+		)
+	}
+	empty := func(t *testing.T, connection *sql.DB) {}
+
+	for _, tc := range []struct {
+		name    string
+		layout  func(t *testing.T, connection *sql.DB)
+		wantErr bool
+	}{
+		{name: "Current", layout: current},
+		{name: "Behind", layout: behind, wantErr: true},
+		{name: "Empty", layout: empty, wantErr: true},
+		// A newer release may add objects before older replicas are
+		// replaced, which must not prevent them from starting.
+		{name: "Ahead", layout: ahead},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			connection := newTestConnection(t)
+			tc.layout(t, connection)
+
+			dbClient, dbCleanupService, err := initializeDatabase(
+				context.Background(),
+				parseDatabaseConfiguration(t, `"schemaManagement": {"verify": {}},`),
+				"postgres",
+				connection,
+				noop.NewTracerProvider(),
+				bb_zstd.NewUnboundedPool(nil, nil),
+			)
+			if tc.wantErr {
+				require.Equal(t, codes.FailedPrecondition, status.Code(err), "error: %v", err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, dbClient)
+			require.NotNil(t, dbCleanupService)
+		})
+	}
+}
+
+func TestInitializeDatabaseVerifyReportsMissingChanges(t *testing.T) {
+	connection := newTestConnection(t)
+	installSchema(t, connection)
+	execSQL(t, connection, `ALTER TABLE "authenticated_users" DROP COLUMN "display_name"`)
+
+	_, _, err := initializeDatabase(
+		context.Background(),
+		parseDatabaseConfiguration(t, `"schemaManagement": {"verify": {}},`),
+		"postgres",
+		connection,
+		noop.NewTracerProvider(),
+		bb_zstd.NewUnboundedPool(nil, nil),
+	)
+	require.ErrorContains(t, err, `ALTER TABLE "authenticated_users" ADD COLUMN "display_name"`)
+}
+
+func TestInitializeDatabaseVerifyComparisonError(t *testing.T) {
+	// A cancelled context makes the comparison itself fail. Nothing else
+	// on the verify path depends on the context.
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	connection := newTestConnection(t)
+	installSchema(t, connection)
+
+	_, _, err := initializeDatabase(
+		ctx,
+		parseDatabaseConfiguration(t, `"schemaManagement": {"verify": {}},`),
+		"postgres",
+		connection,
+		noop.NewTracerProvider(),
+		bb_zstd.NewUnboundedPool(nil, nil),
+	)
+	require.ErrorContains(t, err, "Failed to compare the installed schema with the desired schema")
+}
+
+// TestInitializeDatabaseDMLOnlyRole runs startup as a role that may
+// read and write rows, but not change the schema.
+func TestInitializeDatabaseDMLOnlyRole(t *testing.T) {
+	owner := newTestConnection(t)
+	installSchema(t, owner)
+
+	var databaseName string
+	var port int
+	require.NoError(t, owner.QueryRow("SELECT current_database(), inet_server_port()").Scan(&databaseName, &port))
+	role := "dml_" + uuid.NewString()[:8]
+	execSQL(
+		t, owner,
+		fmt.Sprintf(`CREATE ROLE %q LOGIN PASSWORD 'password'`, role),
+		`REVOKE CREATE ON SCHEMA public FROM PUBLIC`,
+		fmt.Sprintf(`GRANT USAGE ON SCHEMA public TO %q`, role),
+		fmt.Sprintf(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO %q`, role),
+	)
+	initialize := func(t *testing.T, extraFields string) error {
+		connection, err := sql.Open("pgx", fmt.Sprintf("postgres://%s:password@localhost:%d/%s?sslmode=disable", role, port, databaseName))
+		require.NoError(t, err)
+		t.Cleanup(func() { connection.Close() })
+		_, _, err = initializeDatabase(
+			context.Background(),
+			parseDatabaseConfiguration(t, extraFields),
+			"postgres",
+			connection,
+			noop.NewTracerProvider(),
+			bb_zstd.NewUnboundedPool(nil, nil),
+		)
+		return err
+	}
+
+	// The subtests share the database, and run in order.
+	t.Run("VerifyAcceptsCurrentSchema", func(t *testing.T) {
+		require.NoError(t, initialize(t, `"schemaManagement": {"verify": {}},`))
+	})
+	execSQL(t, owner, `ALTER TABLE "authenticated_users" DROP COLUMN "display_name"`)
+	t.Run("VerifyDetectsDrift", func(t *testing.T) {
+		err := initialize(t, `"schemaManagement": {"verify": {}},`)
+		require.Equal(t, codes.FailedPrecondition, status.Code(err), "error: %v", err)
+	})
+	t.Run("ApplyFailsOnDrift", func(t *testing.T) {
+		require.ErrorContains(t, initialize(t, `"schemaManagement": {"apply": {}},`), "Could not automatically migrate to desired schema")
+	})
 }

@@ -94,6 +94,15 @@ message Database {
       // Apply the desired schema at startup, migrating the database
       // towards it. This is the default.
       google.protobuf.Empty apply = 1;
+      // Do not change the schema, but refuse to start if the installed
+      // schema lacks tables, columns, indexes or constraints of the
+      // desired schema, or defines them differently. The error lists
+      // the missing changes. Objects that the installed schema has in
+      // addition are accepted, so that replicas of an older release keep
+      // working after a newer release extended the schema. Only reads
+      // the database catalog, and works with a role that lacks DDL
+      // privileges.
+      google.protobuf.Empty verify = 2;
       // Neither change nor check the schema. The desired schema must
       // already be installed before bb_portal starts.
       google.protobuf.Empty skip = 3;

@@ -74,6 +74,8 @@ go_test(
         "@com_github_prometheus_client_golang//prometheus/testutil",
         "@com_github_stretchr_testify//require",
         "@io_opentelemetry_go_otel_trace//noop",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
         "@org_golang_google_protobuf//encoding/protojson",
     ],
 )
