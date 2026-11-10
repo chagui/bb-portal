@@ -73,6 +73,12 @@ local adminAuthorizer = { allow: {} };
       invocationRetention: '604800s',
       completedActionRetention: '604800s',
     },
+    // By default the desired schema is applied at startup. Set this to
+    // { skip: {} } if schema migrations are managed externally, e.g.
+    // because the database role has no DDL privileges. The desired schema
+    // must then be installed before startup; export it with:
+    //   bazel run //cmd/bb_export_schema > schema.sql
+    schemaManagement: { apply: {} },
   },
 
   contentAddressableStorageServer: {

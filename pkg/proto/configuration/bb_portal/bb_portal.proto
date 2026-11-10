@@ -88,6 +88,24 @@ message Database {
   // Configuration for the database cleanup service to avoid
   // the database growing without bounds.
   CleanupConfiguration cleanup_configuration = 4;
+
+  message SchemaManagement {
+    oneof mode {
+      // Apply the desired schema at startup, migrating the database
+      // towards it. This is the default.
+      google.protobuf.Empty apply = 1;
+      // Neither change nor check the schema. The desired schema must
+      // already be installed before bb_portal starts.
+      google.protobuf.Empty skip = 3;
+    }
+  }
+
+  // How bb_portal manages the database schema at startup. If not set,
+  // behaves as 'apply'. The other modes are meant for deployments that
+  // manage schema migrations externally, for example because the
+  // database role used by bb_portal lacks DDL privileges. The desired
+  // schema can be exported using cmd/bb_export_schema.
+  SchemaManagement schema_management = 5;
 }
 
 message BuildEventStreamService {

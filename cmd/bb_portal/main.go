@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -54,15 +56,35 @@ func setupDatabase(
 	if err != nil {
 		return nil, nil, util.StatusWrap(err, "Failed to connect to database")
 	}
+	return initializeDatabase(ctx, configuration, dialect, connection, tracerProvider, zstdPool)
+}
 
+// initializeDatabase performs all database setup that happens after a
+// connection has been opened. It is separate from setupDatabase so that
+// it can be tested against an embedded database.
+func initializeDatabase(
+	ctx context.Context,
+	configuration *bb_portal.Database,
+	dialect string,
+	connection *sql.DB,
+	tracerProvider trace.TracerProvider,
+	zstdPool bb_zstd.Pool,
+) (database.Client, *dbcleanupservice.DbCleanupService, error) {
 	dbClient, err := database.New(dialect, connection)
 	if err != nil {
 		return nil, nil, util.StatusWrap(err, "Failed to create database client from connection")
 	}
 
-	// Attempt to migrate towards ents model.
-	if err = dbClient.Ent().Schema.Create(ctx, migrate.WithDropIndex(true)); err != nil {
-		return nil, nil, util.StatusWrap(err, "Could not automatically migrate to desired schema")
+	switch configuration.GetSchemaManagement().GetMode().(type) {
+	case nil, *bb_portal.Database_SchemaManagement_Apply:
+		// Attempt to migrate towards ents model.
+		if err = dbClient.Ent().Schema.Create(ctx, migrate.WithDropIndex(true)); err != nil {
+			return nil, nil, util.StatusWrap(err, "Could not automatically migrate to desired schema")
+		}
+	case *bb_portal.Database_SchemaManagement_Skip:
+		log.Print("Schema management is set to skip, assuming the desired schema is already installed")
+	default:
+		return nil, nil, status.Error(codes.Internal, "Schema management mode is not recognized. This is probably a bug.")
 	}
 
 	prometheusmetrics.SyncMetrics(dbClient.Ent())
