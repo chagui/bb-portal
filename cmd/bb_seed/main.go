@@ -52,6 +52,9 @@ func main() {
 			return util.StatusWrap(err, "Failed to create database client from connection")
 		}
 
+		if err = database.RunPreMigrations(ctx, connection); err != nil {
+			return util.StatusWrap(err, "Failed to run pre-migrations")
+		}
 		if err = db.Ent().Schema.Create(ctx, migrate.WithDropIndex(true)); err != nil {
 			return util.StatusWrap(err, "Could not automatically migrate to desired schema")
 		}

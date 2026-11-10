@@ -61,6 +61,10 @@ func (ActionSummary) Edges() []ent.Edge {
 		// Information about the action cache behavior during a single invocation.
 		edge.To("action_cache_statistics", ActionCacheStatistics.Type).
 			Unique().
+			// The default column name made Postgres truncate the name
+			// of the implicit unique index, which Ent then recreated
+			// on every startup. See database.RunPreMigrations.
+			StorageKey(edge.Column("action_summary_id")).
 			Annotations(
 				entsql.OnDelete(entsql.Cascade),
 			),

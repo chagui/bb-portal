@@ -141,3 +141,34 @@ func TestInitializeDatabaseSkipUsesExistingSchema(t *testing.T) {
 	require.NotNil(t, dbCleanupService)
 	require.Equal(t, 1.0, testutil.ToFloat64(prometheusmetrics.AuthenticatedUsersCount))
 }
+
+// TestInitializeDatabaseSkipSkipsPreMigrations ensures
+// that skipping schema management also skips the pre-migrations, as they
+// require DDL privileges as well.
+func TestInitializeDatabaseSkipSkipsPreMigrations(t *testing.T) {
+	ctx := context.Background()
+	connection := newTestConnection(t)
+	_, err := connection.ExecContext(ctx, `CREATE TABLE "action_cache_statistics" ("id" bigint PRIMARY KEY, "action_summary_action_cache_statistics" bigint NULL)`)
+	require.NoError(t, err)
+
+	_, _, err = initializeDatabase(
+		ctx,
+		parseDatabaseConfiguration(t, `"schemaManagement": {"skip": {}},`),
+		"postgres",
+		connection,
+		noop.NewTracerProvider(),
+		bb_zstd.NewUnboundedPool(nil, nil),
+	)
+	require.NoError(t, err)
+
+	var legacyColumnExists bool
+	require.NoError(t, connection.QueryRowContext(
+		ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.columns
+			WHERE table_name = 'action_cache_statistics'
+			AND column_name = 'action_summary_action_cache_statistics'
+		)`,
+	).Scan(&legacyColumnExists))
+	require.True(t, legacyColumnExists, "pre-migrations should not have run")
+}

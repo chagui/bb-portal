@@ -77,6 +77,9 @@ func initializeDatabase(
 
 	switch configuration.GetSchemaManagement().GetMode().(type) {
 	case nil, *bb_portal.Database_SchemaManagement_Apply:
+		if err = database.RunPreMigrations(ctx, connection); err != nil {
+			return nil, nil, util.StatusWrap(err, "Failed to run pre-migrations")
+		}
 		// Attempt to migrate towards ents model.
 		if err = dbClient.Ent().Schema.Create(ctx, migrate.WithDropIndex(true)); err != nil {
 			return nil, nil, util.StatusWrap(err, "Could not automatically migrate to desired schema")
