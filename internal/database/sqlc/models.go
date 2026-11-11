@@ -111,6 +111,7 @@ type BazelInvocation struct {
 
 type Build struct {
 	ID                 int64
+	BuildUrl           sql.NullString
 	BuildUuid          uuid.UUID
 	Timestamp          time.Time
 	InstanceNameBuilds int64

@@ -9316,6 +9316,7 @@ type BuildMutation struct {
 	op                   Op
 	typ                  string
 	id                   *int64
+	build_url            *string
 	build_uuid           *uuid.UUID
 	timestamp            *time.Time
 	clearedFields        map[string]struct{}
@@ -9434,6 +9435,55 @@ func (m *BuildMutation) IDs(ctx context.Context) ([]int64, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetBuildURL sets the "build_url" field.
+func (m *BuildMutation) SetBuildURL(s string) {
+	m.build_url = &s
+}
+
+// BuildURL returns the value of the "build_url" field in the mutation.
+func (m *BuildMutation) BuildURL() (r string, exists bool) {
+	v := m.build_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuildURL returns the old "build_url" field's value of the Build entity.
+// If the Build object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BuildMutation) OldBuildURL(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuildURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuildURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuildURL: %w", err)
+	}
+	return oldValue.BuildURL, nil
+}
+
+// ClearBuildURL clears the value of the "build_url" field.
+func (m *BuildMutation) ClearBuildURL() {
+	m.build_url = nil
+	m.clearedFields[build.FieldBuildURL] = struct{}{}
+}
+
+// BuildURLCleared returns if the "build_url" field was cleared in this mutation.
+func (m *BuildMutation) BuildURLCleared() bool {
+	_, ok := m.clearedFields[build.FieldBuildURL]
+	return ok
+}
+
+// ResetBuildURL resets all changes to the "build_url" field.
+func (m *BuildMutation) ResetBuildURL() {
+	m.build_url = nil
+	delete(m.clearedFields, build.FieldBuildURL)
 }
 
 // SetBuildUUID sets the "build_uuid" field.
@@ -9689,7 +9739,10 @@ func (m *BuildMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BuildMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
+	if m.build_url != nil {
+		fields = append(fields, build.FieldBuildURL)
+	}
 	if m.build_uuid != nil {
 		fields = append(fields, build.FieldBuildUUID)
 	}
@@ -9704,6 +9757,8 @@ func (m *BuildMutation) Fields() []string {
 // schema.
 func (m *BuildMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case build.FieldBuildURL:
+		return m.BuildURL()
 	case build.FieldBuildUUID:
 		return m.BuildUUID()
 	case build.FieldTimestamp:
@@ -9717,6 +9772,8 @@ func (m *BuildMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *BuildMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case build.FieldBuildURL:
+		return m.OldBuildURL(ctx)
 	case build.FieldBuildUUID:
 		return m.OldBuildUUID(ctx)
 	case build.FieldTimestamp:
@@ -9730,6 +9787,13 @@ func (m *BuildMutation) OldField(ctx context.Context, name string) (ent.Value, e
 // type.
 func (m *BuildMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case build.FieldBuildURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuildURL(v)
+		return nil
 	case build.FieldBuildUUID:
 		v, ok := value.(uuid.UUID)
 		if !ok {
@@ -9773,7 +9837,11 @@ func (m *BuildMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *BuildMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(build.FieldBuildURL) {
+		fields = append(fields, build.FieldBuildURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -9786,6 +9854,11 @@ func (m *BuildMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *BuildMutation) ClearField(name string) error {
+	switch name {
+	case build.FieldBuildURL:
+		m.ClearBuildURL()
+		return nil
+	}
 	return fmt.Errorf("unknown Build nullable field %s", name)
 }
 
@@ -9793,6 +9866,9 @@ func (m *BuildMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *BuildMutation) ResetField(name string) error {
 	switch name {
+	case build.FieldBuildURL:
+		m.ResetBuildURL()
+		return nil
 	case build.FieldBuildUUID:
 		m.ResetBuildUUID()
 		return nil

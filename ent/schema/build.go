@@ -19,6 +19,9 @@ type Build struct {
 // Fields of the Build.
 func (Build) Fields() []ent.Field {
 	return []ent.Field{
+		// Deprecated: retain this field so automatic migrations make legacy
+		// build_url columns nullable. New builds no longer populate it.
+		field.String("build_url").Optional().Nillable().Immutable().Annotations(entgql.Skip()),
 		field.UUID("build_uuid", uuid.UUID{}).Unique().Immutable(),
 		field.Time("timestamp").Annotations(entgql.OrderField("TIMESTAMP")),
 	}

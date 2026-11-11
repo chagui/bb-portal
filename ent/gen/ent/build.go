@@ -19,6 +19,8 @@ type Build struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int64 `json:"id,omitempty"`
+	// BuildURL holds the value of the "build_url" field.
+	BuildURL *string `json:"build_url,omitempty"`
 	// BuildUUID holds the value of the "build_uuid" field.
 	BuildUUID uuid.UUID `json:"build_uuid,omitempty"`
 	// Timestamp holds the value of the "timestamp" field.
@@ -84,6 +86,8 @@ func (*Build) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case build.FieldID:
 			values[i] = new(sql.NullInt64)
+		case build.FieldBuildURL:
+			values[i] = new(sql.NullString)
 		case build.FieldTimestamp:
 			values[i] = new(sql.NullTime)
 		case build.FieldBuildUUID:
@@ -111,6 +115,13 @@ func (_m *Build) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = int64(value.Int64)
+		case build.FieldBuildURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field build_url", values[i])
+			} else if value.Valid {
+				_m.BuildURL = new(string)
+				*_m.BuildURL = value.String
+			}
 		case build.FieldBuildUUID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field build_uuid", values[i])
@@ -181,6 +192,11 @@ func (_m *Build) String() string {
 	var builder strings.Builder
 	builder.WriteString("Build(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	if v := _m.BuildURL; v != nil {
+		builder.WriteString("build_url=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
 	builder.WriteString("build_uuid=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BuildUUID))
 	builder.WriteString(", ")

@@ -377,12 +377,12 @@ func (_q *BuildQuery) WithTags(opts ...func(*BuildTagQuery)) *BuildQuery {
 // Example:
 //
 //	var v []struct {
-//		BuildUUID uuid.UUID `json:"build_uuid,omitempty"`
+//		BuildURL string `json:"build_url,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Build.Query().
-//		GroupBy(build.FieldBuildUUID).
+//		GroupBy(build.FieldBuildURL).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *BuildQuery) GroupBy(field string, fields ...string) *BuildGroupBy {
@@ -400,11 +400,11 @@ func (_q *BuildQuery) GroupBy(field string, fields ...string) *BuildGroupBy {
 // Example:
 //
 //	var v []struct {
-//		BuildUUID uuid.UUID `json:"build_uuid,omitempty"`
+//		BuildURL string `json:"build_url,omitempty"`
 //	}
 //
 //	client.Build.Query().
-//		Select(build.FieldBuildUUID).
+//		Select(build.FieldBuildURL).
 //		Scan(ctx, &v)
 func (_q *BuildQuery) Select(fields ...string) *BuildSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

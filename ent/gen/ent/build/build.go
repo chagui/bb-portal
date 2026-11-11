@@ -13,6 +13,8 @@ const (
 	Label = "build"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldBuildURL holds the string denoting the build_url field in the database.
+	FieldBuildURL = "build_url"
 	// FieldBuildUUID holds the string denoting the build_uuid field in the database.
 	FieldBuildUUID = "build_uuid"
 	// FieldTimestamp holds the string denoting the timestamp field in the database.
@@ -51,6 +53,7 @@ const (
 // Columns holds all SQL columns for build fields.
 var Columns = []string{
 	FieldID,
+	FieldBuildURL,
 	FieldBuildUUID,
 	FieldTimestamp,
 }
@@ -92,6 +95,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByBuildURL orders the results by the build_url field.
+func ByBuildURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuildURL, opts...).ToFunc()
 }
 
 // ByBuildUUID orders the results by the build_uuid field.

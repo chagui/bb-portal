@@ -186,6 +186,9 @@ func (_u *BuildUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			}
 		}
 	}
+	if _u.mutation.BuildURLCleared() {
+		_spec.ClearField(build.FieldBuildURL, field.TypeString)
+	}
 	if value, ok := _u.mutation.Timestamp(); ok {
 		_spec.SetField(build.FieldTimestamp, field.TypeTime, value)
 	}
@@ -512,6 +515,9 @@ func (_u *BuildUpdateOne) sqlSave(ctx context.Context) (_node *Build, err error)
 				ps[i](selector)
 			}
 		}
+	}
+	if _u.mutation.BuildURLCleared() {
+		_spec.ClearField(build.FieldBuildURL, field.TypeString)
 	}
 	if value, ok := _u.mutation.Timestamp(); ok {
 		_spec.SetField(build.FieldTimestamp, field.TypeTime, value)

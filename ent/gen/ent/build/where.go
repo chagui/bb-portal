@@ -56,6 +56,11 @@ func IDLTE(id int64) predicate.Build {
 	return predicate.Build(sql.FieldLTE(FieldID, id))
 }
 
+// BuildURL applies equality check predicate on the "build_url" field. It's identical to BuildURLEQ.
+func BuildURL(v string) predicate.Build {
+	return predicate.Build(sql.FieldEQ(FieldBuildURL, v))
+}
+
 // BuildUUID applies equality check predicate on the "build_uuid" field. It's identical to BuildUUIDEQ.
 func BuildUUID(v uuid.UUID) predicate.Build {
 	return predicate.Build(sql.FieldEQ(FieldBuildUUID, v))
@@ -64,6 +69,81 @@ func BuildUUID(v uuid.UUID) predicate.Build {
 // Timestamp applies equality check predicate on the "timestamp" field. It's identical to TimestampEQ.
 func Timestamp(v time.Time) predicate.Build {
 	return predicate.Build(sql.FieldEQ(FieldTimestamp, v))
+}
+
+// BuildURLEQ applies the EQ predicate on the "build_url" field.
+func BuildURLEQ(v string) predicate.Build {
+	return predicate.Build(sql.FieldEQ(FieldBuildURL, v))
+}
+
+// BuildURLNEQ applies the NEQ predicate on the "build_url" field.
+func BuildURLNEQ(v string) predicate.Build {
+	return predicate.Build(sql.FieldNEQ(FieldBuildURL, v))
+}
+
+// BuildURLIn applies the In predicate on the "build_url" field.
+func BuildURLIn(vs ...string) predicate.Build {
+	return predicate.Build(sql.FieldIn(FieldBuildURL, vs...))
+}
+
+// BuildURLNotIn applies the NotIn predicate on the "build_url" field.
+func BuildURLNotIn(vs ...string) predicate.Build {
+	return predicate.Build(sql.FieldNotIn(FieldBuildURL, vs...))
+}
+
+// BuildURLGT applies the GT predicate on the "build_url" field.
+func BuildURLGT(v string) predicate.Build {
+	return predicate.Build(sql.FieldGT(FieldBuildURL, v))
+}
+
+// BuildURLGTE applies the GTE predicate on the "build_url" field.
+func BuildURLGTE(v string) predicate.Build {
+	return predicate.Build(sql.FieldGTE(FieldBuildURL, v))
+}
+
+// BuildURLLT applies the LT predicate on the "build_url" field.
+func BuildURLLT(v string) predicate.Build {
+	return predicate.Build(sql.FieldLT(FieldBuildURL, v))
+}
+
+// BuildURLLTE applies the LTE predicate on the "build_url" field.
+func BuildURLLTE(v string) predicate.Build {
+	return predicate.Build(sql.FieldLTE(FieldBuildURL, v))
+}
+
+// BuildURLContains applies the Contains predicate on the "build_url" field.
+func BuildURLContains(v string) predicate.Build {
+	return predicate.Build(sql.FieldContains(FieldBuildURL, v))
+}
+
+// BuildURLHasPrefix applies the HasPrefix predicate on the "build_url" field.
+func BuildURLHasPrefix(v string) predicate.Build {
+	return predicate.Build(sql.FieldHasPrefix(FieldBuildURL, v))
+}
+
+// BuildURLHasSuffix applies the HasSuffix predicate on the "build_url" field.
+func BuildURLHasSuffix(v string) predicate.Build {
+	return predicate.Build(sql.FieldHasSuffix(FieldBuildURL, v))
+}
+
+// BuildURLIsNil applies the IsNil predicate on the "build_url" field.
+func BuildURLIsNil() predicate.Build {
+	return predicate.Build(sql.FieldIsNull(FieldBuildURL))
+}
+
+// BuildURLNotNil applies the NotNil predicate on the "build_url" field.
+func BuildURLNotNil() predicate.Build {
+	return predicate.Build(sql.FieldNotNull(FieldBuildURL))
+}
+
+// BuildURLEqualFold applies the EqualFold predicate on the "build_url" field.
+func BuildURLEqualFold(v string) predicate.Build {
+	return predicate.Build(sql.FieldEqualFold(FieldBuildURL, v))
+}
+
+// BuildURLContainsFold applies the ContainsFold predicate on the "build_url" field.
+func BuildURLContainsFold(v string) predicate.Build {
+	return predicate.Build(sql.FieldContainsFold(FieldBuildURL, v))
 }
 
 // BuildUUIDEQ applies the EQ predicate on the "build_uuid" field.

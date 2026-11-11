@@ -228,6 +228,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "Build",
 		Fields: map[string]*sqlgraph.FieldSpec{
+			build.FieldBuildURL:  {Type: field.TypeString, Column: build.FieldBuildURL},
 			build.FieldBuildUUID: {Type: field.TypeUUID, Column: build.FieldBuildUUID},
 			build.FieldTimestamp: {Type: field.TypeTime, Column: build.FieldTimestamp},
 		},
@@ -3381,6 +3382,11 @@ func (f *BuildFilter) Where(p entql.P) {
 // WhereID applies the entql int64 predicate on the id field.
 func (f *BuildFilter) WhereID(p entql.Int64P) {
 	f.Where(p.Field(build.FieldID))
+}
+
+// WhereBuildURL applies the entql string predicate on the build_url field.
+func (f *BuildFilter) WhereBuildURL(p entql.StringP) {
+	f.Where(p.Field(build.FieldBuildURL))
 }
 
 // WhereBuildUUID applies the entql [16]byte predicate on the build_uuid field.

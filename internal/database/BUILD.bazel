@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "database",
@@ -16,5 +16,19 @@ go_library(
         "@com_github_google_uuid//:uuid",
         "@io_entgo_ent//dialect",
         "@io_entgo_ent//dialect/sql",
+    ],
+)
+
+go_test(
+    name = "database_test",
+    srcs = ["schema_migration_test.go"],
+    deps = [
+        ":database",
+        "//ent/gen/ent/migrate",
+        "//ent/gen/ent/runtime",
+        "//internal/database/dbauthservice",
+        "//internal/database/embedded",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//require",
     ],
 )

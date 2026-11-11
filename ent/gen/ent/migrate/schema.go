@@ -300,6 +300,7 @@ var (
 	// BuildsColumns holds the columns for the "builds" table.
 	BuildsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "build_url", Type: field.TypeString, Nullable: true},
 		{Name: "build_uuid", Type: field.TypeUUID, Unique: true},
 		{Name: "timestamp", Type: field.TypeTime},
 		{Name: "instance_name_builds", Type: field.TypeInt64},
@@ -312,7 +313,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "builds_instance_names_builds",
-				Columns:    []*schema.Column{BuildsColumns[3]},
+				Columns:    []*schema.Column{BuildsColumns[4]},
 				RefColumns: []*schema.Column{InstanceNamesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -321,12 +322,12 @@ var (
 			{
 				Name:    "build_timestamp",
 				Unique:  false,
-				Columns: []*schema.Column{BuildsColumns[2]},
+				Columns: []*schema.Column{BuildsColumns[3]},
 			},
 			{
 				Name:    "build_instance_name_builds",
 				Unique:  false,
-				Columns: []*schema.Column{BuildsColumns[3]},
+				Columns: []*schema.Column{BuildsColumns[4]},
 			},
 		},
 	}

@@ -26,6 +26,20 @@ type BuildCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetBuildURL sets the "build_url" field.
+func (_c *BuildCreate) SetBuildURL(v string) *BuildCreate {
+	_c.mutation.SetBuildURL(v)
+	return _c
+}
+
+// SetNillableBuildURL sets the "build_url" field if the given value is not nil.
+func (_c *BuildCreate) SetNillableBuildURL(v *string) *BuildCreate {
+	if v != nil {
+		_c.SetBuildURL(*v)
+	}
+	return _c
+}
+
 // SetBuildUUID sets the "build_uuid" field.
 func (_c *BuildCreate) SetBuildUUID(v uuid.UUID) *BuildCreate {
 	_c.mutation.SetBuildUUID(v)
@@ -161,6 +175,10 @@ func (_c *BuildCreate) createSpec() (*Build, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = id
 	}
+	if value, ok := _c.mutation.BuildURL(); ok {
+		_spec.SetField(build.FieldBuildURL, field.TypeString, value)
+		_node.BuildURL = &value
+	}
 	if value, ok := _c.mutation.BuildUUID(); ok {
 		_spec.SetField(build.FieldBuildUUID, field.TypeUUID, value)
 		_node.BuildUUID = value
@@ -225,7 +243,7 @@ func (_c *BuildCreate) createSpec() (*Build, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Build.Create().
-//		SetBuildUUID(v).
+//		SetBuildURL(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -234,7 +252,7 @@ func (_c *BuildCreate) createSpec() (*Build, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.BuildUpsert) {
-//			SetBuildUUID(v+v).
+//			SetBuildURL(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *BuildCreate) OnConflict(opts ...sql.ConflictOption) *BuildUpsertOne {
@@ -298,6 +316,9 @@ func (u *BuildUpsertOne) UpdateNewValues() *BuildUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(build.FieldID)
+		}
+		if _, exists := u.create.mutation.BuildURL(); exists {
+			s.SetIgnore(build.FieldBuildURL)
 		}
 		if _, exists := u.create.mutation.BuildUUID(); exists {
 			s.SetIgnore(build.FieldBuildUUID)
@@ -481,7 +502,7 @@ func (_c *BuildCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.BuildUpsert) {
-//			SetBuildUUID(v+v).
+//			SetBuildURL(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *BuildCreateBulk) OnConflict(opts ...sql.ConflictOption) *BuildUpsertBulk {
@@ -527,6 +548,9 @@ func (u *BuildUpsertBulk) UpdateNewValues() *BuildUpsertBulk {
 		for _, b := range u.create.builders {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(build.FieldID)
+			}
+			if _, exists := b.mutation.BuildURL(); exists {
+				s.SetIgnore(build.FieldBuildURL)
 			}
 			if _, exists := b.mutation.BuildUUID(); exists {
 				s.SetIgnore(build.FieldBuildUUID)
